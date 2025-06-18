@@ -3,24 +3,28 @@
 #include <stdlib.h>
 #include <time.h>
 #include <conio.h>
+#include <ctype.h>
 
 #define MAX_NOME_ARQUIVO 30
 #define MAX_LINHAS 1001
-#define NOME_SENSOR 5
+#define NOME_SENSOR 16
+
+//tem que fazer tudo aqui ainda!!!
 
 typedef struct{
     char nome_sensor[NOME_SENSOR];
     long long int timestamp_sensor;
-    float medicao;
-}Sensores ;
+    char medicao[10];
+}Sensores;
 
 void abrirArquivo();
 int obterNumeroLinhas();
-time_t capturar_timestamp_valido(int dia, int mes, int ano, int hora, int min, int seg);
+time_t capturar_timestamp_valido();
 void limparTela();
 void sairComQualquerTecla();
-int binSearch(Sensores *sensor, int left, int right, int key);
+int binSearch();
 int interpretarComando();
+int validarNomeSensor();
 
 void sairComQualquerTecla(){
     printf("Aperte qualquer tecla para continuar: \n");
@@ -32,34 +36,30 @@ void sairComQualquerTecla(){
     }
 }
 
+int validarNomeSensor(char * argv[]){
+    
+    if (strlen(argv[1])> NOME_SENSOR){
+        printf("Argumento %s excede o tamanho maximo de caracteres!\n",argv[1]);
+        return -1;
+    }
+    return 0;
+}
 //funçao pra verificar se os argumentos da linha de comando são integer
-int interpretarComando(int argc, char * argv[]){
+int interpretarComando(char * argv[]){
     
-    
-    for (int i = 2; i< argc; i++){
-        int num = atoi(argv[i]);
-        if (num != 0 || argv[i][0] == '0') { 
-            printf("argumento convertido para integer %d\n", num);
-        } else {
-            printf("'%s' nao e um numero!.\n", argv[i]);
+    for (int i = 2; i< 8; i++){
+        int num = isdigit(argv[i][0]);
+        if (num == 0){
+            printf("argumento %s nao e um numero!\n", argv[i]);
+            //sairComQualquerTecla();
             return -1;
-        }
+        }        
     }
     return 0;
 }
 // função pra receber o valor do usuario e transformar em timestamp
 time_t capturar_timestamp_valido(int dia, int mes, int ano, int hora, int min, int seg) {
-    //int dia, mes, ano, hora, min, seg;
     struct tm t;
-    
-
-   /* while (1) {
-        printf("Digite a data e hora (dd mm aaaa hh mm ss): ");
-        if (scanf("%d %d %d %d %d %d", &dia, &mes, &ano, &hora, &min, &seg) != 6) {
-            while (getchar() != '\n');
-            printf("Entrada inválida. Tente novamente.\n");
-            continue;
-        }*/
 
         t.tm_year = ano - 1900;
         t.tm_mon = mes - 1;
@@ -76,7 +76,7 @@ time_t capturar_timestamp_valido(int dia, int mes, int ano, int hora, int min, i
         } else {
             return timestamp;
         }
-    //}
+    
 }
 
 void limparTela(){
@@ -88,6 +88,7 @@ void limparTela(){
 }
 
 //função pra abrir o arquivo e guardar como integer
+//tem que trocar a ordem e o tipo de dado do fscanf
 void abrirArquivo(char nome_arquivo[MAX_NOME_ARQUIVO], int numero_linhas, Sensores *sensor){
     FILE* arquivo = fopen(nome_arquivo, "r");
     
@@ -98,7 +99,7 @@ void abrirArquivo(char nome_arquivo[MAX_NOME_ARQUIVO], int numero_linhas, Sensor
     Sensores sensortemp;
     int i = 0;
 
-    while (fscanf(arquivo, "%6[^;];%lld;%f\n", sensortemp.nome_sensor, &sensortemp.timestamp_sensor, &sensortemp.medicao)==3){
+    while (fscanf(arquivo, "%16[^;];%10[^;];%lld\n", sensortemp.nome_sensor, sensortemp.medicao, &sensortemp.timestamp_sensor)==3){
         
         sensor[i] = sensortemp;
         i++;
@@ -168,21 +169,23 @@ int binSearch(Sensores *sensor, int left, int right, int key) {
 
 int main (int argc, char * argv[]){
     
+    if (argc != 8 ){
+        printf("Erro na linha de comando! Digite um nome valido de arquivo e a data e hora no formato dd mm aaaa hh mm ss!\n");
+        return -1;
+    }
+    if (interpretarComando(argv) !=0){
+        printf("Erro na linha de comando! Data deve estar no formato dd mm aaaa hh mm ss!\n");
+        return -1;
+    }
+    if(validarNomeSensor(argv)!=0){
+        printf("Erro na linha de comando! Nome do sensor Exece o limite de caracteres!\n");
+        return -1;
+    }
+    limparTela();
     long long int key;
     int numero_linhas;
-    //char nome_arquivo[MAX_NOME_ARQUIVO];
-
-    limparTela();
-
-    if (argc != 8 ){
-        printf("Erro na linha de comando! Digite um nome valido de arquivo e a data e hora no formato dd mm aaaa hh mm ss!");
-        return 0;
-    }
-    if (interpretarComando(argc, argv) !=0){
-        printf("Erro na linha de comando! Data deve estar no formato dd mm aaaa hh mm ss!");
-        return 0;
-    }
     int dia, mes, ano, hora, min, seg;
+
     dia = atoi(argv[2]);
     mes = atoi(argv[3]);
     ano = atoi(argv[4]);
@@ -192,39 +195,32 @@ int main (int argc, char * argv[]){
 
     if (capturar_timestamp_valido(dia, mes, ano, hora, min, seg) == -1){
         printf("Data inválida. Tente novamente.\n");
-        return 0;
+        return -1;
     }
 
-
-   
-
-    /*printf("Digite um nome de arquivo:\n");
-    fgets(nome_arquivo, MAX_NOME_ARQUIVO, stdin);
-    nome_arquivo[strcspn(nome_arquivo, "\n")] = '\0';*/
     printf("abrindo o arquivo: %s\n",argv[1]);
-
-
+    key = capturar_timestamp_valido(dia, mes, ano, hora, min, seg);
+    printf("timestamp informado: %d\n", key);
     numero_linhas = obterNumeroLinhas(argv[1]);
     Sensores sensor[numero_linhas]; 
     abrirArquivo(argv[1], numero_linhas, sensor);
     
-    key = capturar_timestamp_valido(dia, mes, ano, hora, min, seg);
-    printf("timestamp informado: %d\n", key);
+    sairComQualquerTecla();
 
     int result = binSearch(sensor, 0, numero_linhas-1, key); 
     if (result == 0) {
         printf("Atencao: So existem leituras posteriores a data informada!\n");
         printf("Elemento mais proximo esta na posicao %d\n", result+1); // resultado da pesquisa, lembrando que a lista começa na posição 0
-        printf("Resultado da busca: %s %lld %.2f\n", sensor[result].nome_sensor, sensor[result].timestamp_sensor, sensor[result].medicao);
+        printf("Resultado da busca: %s %lld %s\n", sensor[result].nome_sensor, sensor[result].timestamp_sensor, sensor[result].medicao);
     }
     else if (result == numero_linhas-1){
         printf("Atencao: So existem leituras anteriores a data informada!\n");
         printf("Elemento mais proximo esta na posicao %d\n", result+1); // resultado da pesquisa, lembrando que a lista começa na posição 0
-        printf("Resultado da busca: %s %lld %.2f\n", sensor[result].nome_sensor, sensor[result].timestamp_sensor, sensor[result].medicao);
+        printf("Resultado da busca: %s %lld %s\n", sensor[result].nome_sensor, sensor[result].timestamp_sensor, sensor[result].medicao);
     }
     else {
         printf("Elemento mais proximo esta na posicao %d\n", result+1); // resultado da pesquisa, lembrando que a lista começa na posição 0
-        printf("Resultado da busca: %s %lld %.2f\n", sensor[result].nome_sensor, sensor[result].timestamp_sensor, sensor[result].medicao);
+        printf("Resultado da busca: %s %lld %s\n", sensor[result].nome_sensor, sensor[result].timestamp_sensor, sensor[result].medicao);
     } 
     return 0;
 }

@@ -7,26 +7,28 @@
 
 //#define MAX_NOME_ARQUIVO 30
 #define MAX_LINHAS 2001
-#define NOME_SENSOR 5
+#define NOME_SENSOR 16
+#define MAX_LEITURA 10
 
 
 typedef struct{
     char nome_sensor[NOME_SENSOR];
+    char medicao[MAX_LEITURA];
     long long int timestamp_sensor;
-    float medicao;
 }Sensores ;
 
-void abrirArquivo(char nome_arquivo[], int numero_linhas, Sensores *sensor);
-int obterNumeroLinhas(char nome_arquivo[]);
+void abrirArquivo();
+int obterNumeroLinhas();
 void limparTela();
-void selection_(Sensores *sensor, int size);
-void selection(Sensores *sensor, int size);
-void selection_nome(Sensores *sensor, int size);
-void selectionNome(Sensores *sensor, int size);
-int posicaoNome(Sensores *sensor, int size, int start);
+void selection_();
+void selection();
+void selection_nome();
+void selectionNome();
+int posicaoNome();
 void sairComQualquerTecla();
-void criarArquivo(int nome, Sensores *sensor, int size);
-void gravarArquivo(FILE *arquivo, Sensores *sensor, int size);
+void criarArquivo();
+void gravarArquivo();
+int obterNumeroSensores();
 
 
 // função que limpa a tela do terminal, quality of life /heh
@@ -51,7 +53,7 @@ void abrirArquivo(char nome_arquivo[], int numero_linhas, Sensores *sensor){
     // esse while aqui vai continuar rodando até que o numero de inputs recebidos do arquivo seja diferente de 3
     // cada vez que ele roda ele guarda as informações no buffer e depois passa o buffer pra proxima posição
     // da struct da função main
-    while (fscanf(arquivo, "%6[^;];%lld;%f\n", sensortemp.nome_sensor, &sensortemp.timestamp_sensor, &sensortemp.medicao)==3){
+    while (fscanf(arquivo, "%16[^;];%10[^;];%lld;\n", sensortemp.nome_sensor, sensortemp.medicao, &sensortemp.timestamp_sensor)==3){
         sensor[i] = sensortemp;
         i++;
     }
@@ -94,7 +96,17 @@ int obterNumeroLinhas(char nome_arquivo[]){
     return contador_linhas;
 }
 
+//argumentos: lista de sensores, tamanho da lista
+int obterNumeroSensores(Sensores *sensor, int size){
+    int j = 0;
+    for (int i = 0; i < size ; i++){
+        if (strcmp(sensor[i].nome_sensor, sensor[i+1].nome_sensor)!=0) { 
+            j++;
+        }   
+    }
 
+    return j;
+}
 // função selection pra colocar as structs em ordem alfabetica pelo nome do sensor
 void selection_nome(Sensores *sensor, int size){
     int i;  
@@ -155,73 +167,40 @@ void selection(Sensores *sensor, int size){
         selection_(sensor, size -i);
     }
 }
+
 // função pra gravar as linhas da struct organizada em um arquivo
 // ela roda dentro da função de criar arquivo, entao o arquivo ja vai estar aberto com o nome certo
 void gravarArquivo(FILE *arquivo, Sensores *sensor, int size){
 
     for (int i = 0; i < size-1; i++){
-        fprintf(arquivo, "%s;%lld;%.2f\n", sensor[i].nome_sensor, sensor[i].timestamp_sensor, sensor[i].medicao);   
+        fprintf(arquivo, "%s;",sensor[i].nome_sensor); 
+        fprintf(arquivo, "%s;",sensor[i].medicao);
+        fprintf(arquivo, "%lld\n",sensor[i].timestamp_sensor);
     }
     // esse ultimo tem que rodar fora do for pra não printar mais um \n no arquivo
-    fprintf(arquivo, "%s;%lld;%.2f", sensor[size-1].nome_sensor, sensor[size-1].timestamp_sensor, sensor[size-1].medicao);
+    fprintf(arquivo, "%s;", sensor[size-1].nome_sensor);
+    fprintf(arquivo, "%s;",sensor[size-1].medicao);
+    fprintf(arquivo, "%lld",sensor[size-1].timestamp_sensor);
     fclose(arquivo);
 
 }
 // função pra criar um arquivo diferente com cada nome de sensor e abrir no modo w
-// a primeira int é pra usar no switch 
-void criarArquivo(int nome, Sensores *sensor, int size){
+void criarArquivo(Sensores *sensor, int size){
+    char nome_arquivo[20] = "\0"; // inicializando a string do nome de arquivo com NULL terminator
+    strcat(nome_arquivo, sensor[0].nome_sensor);// colocando o nome do sensor na string
+    printf("nome do sensor: %s\n",nome_arquivo);
+    strcat(nome_arquivo, ".txt");// adicionando .txt no fim do nome do arquivo
+    printf("nome do arquivo: %s\n",nome_arquivo);
     
-    FILE *arquivo;
-    switch (nome){
-        case 0:
-            arquivo = fopen("FLUX.txt", "w");
+    FILE *arquivo = fopen(nome_arquivo, "w");
             if (arquivo == NULL) {
                 printf("Erro ao criar o arquivo!\n");
                 return;
             }
             gravarArquivo(arquivo, sensor, size);
-            printf("arquivo FLUX.txt criado!\n");
-            break;
-        case 1:
-            arquivo = fopen("PRES.txt", "w");
-            if (arquivo == NULL) {
-                printf("Erro ao criar o arquivo!\n");
-                return;
-            }
-            gravarArquivo(arquivo, sensor, size);
-            printf("arquivo PRES.txt criado!\n");
-            break;
-        case 2:
-            arquivo = fopen("TEMP.txt", "w");
-            if (arquivo == NULL) {
-                printf("Erro ao criar o arquivo!\n");
-                return;
-            }
-            gravarArquivo(arquivo, sensor, size);
-            printf("arquivo TEMP.txt criado!\n");
-            break;
-        case 3:
-            arquivo = fopen("UMID.txt", "w");
-            if (arquivo == NULL) {
-                printf("Erro ao criar o arquivo!\n");
-                return;
-            }
-            gravarArquivo(arquivo, sensor, size);
-            printf("arquivo UMID.txt criado!\n");
-            break;
-        case 4:
-            arquivo = fopen("VIBR.txt", "w");
-            if (arquivo == NULL) {
-                printf("Erro ao criar o arquivo!\n");
-                return;
-            }
-            gravarArquivo(arquivo, sensor, size);
-            printf("arquivo VIBR.txt criado!\n");
-            break;
-        default:
-            printf("Erro! Verifique a quantidade de sensores do arquivo!\n");
-            break;
-    }
+            printf("arquivo %s criado!\n",nome_arquivo);
+            sairComQualquerTecla();
+    
     return;
 }
 
@@ -256,20 +235,17 @@ int main (int argc, char * argv[]){
     //char nome_arquivo[MAX_NOME_ARQUIVO];
     int posicao;
     int start = 0;
-    int numero_sensores = 5;
+    //int numero_sensores = 5;
     int size;
+    //char extensao[20];
 
     limparTela();
 
     if (argc != 2 ){
         printf("Erro na linha de comando! Digite o nome do arquivo sem espaços ou entre aspas duplas!");
-        return 0;
+        return -1;
     }
     
-
-    /*printf("Digite um nome de arquivo:\n");
-    fgets(nome_arquivo, MAX_NOME_ARQUIVO, stdin);
-    nome_arquivo[strcspn(nome_arquivo, "\n")] = '\0';*/
     printf("abrindo o arquivo: %s\n",argv[1]);
     sairComQualquerTecla();
 
@@ -280,10 +256,24 @@ int main (int argc, char * argv[]){
 
     // nessa função vai abrir o arquivo e copiar o conteudo pro array de struct da função main
     abrirArquivo(argv[1], numero_linhas, sensor);
-  
+    /*for (int i = 0; i < numero_linhas; i++){
+        printf("sensor capturado linha %d: %s %s %d\n", i, sensor[i].nome_sensor, sensor[i].medicao, sensor[i].timestamp_sensor);
+        
+    }
+    sairComQualquerTecla();
+    limparTela();*/
     //colocando a struct em ordem alfabetica
     selection_nome(sensor, numero_linhas);
-    limparTela();
+    /*for (int i = 0; i < numero_linhas; i++){
+        printf("sensor principal em ordem alfabetica linha %d: %s %s %d\n", i, sensor[i].nome_sensor, sensor[i].medicao, sensor[i].timestamp_sensor);
+        
+    }*/
+
+    //deu certo até aqui!!!!
+    //sairComQualquerTecla();
+    //limparTela();
+    int numero_sensores = obterNumeroSensores(sensor,numero_linhas);
+    printf("numero de sensores: %d\n",numero_sensores);
 
     // repetição pra copiar as coisas pra struct buffer e gravar num arquivo
     for (int k = 0; k < numero_sensores; k++){ // int k representa o nome do sensor atual que esta sendo ordenado e gravado
@@ -293,19 +283,31 @@ int main (int argc, char * argv[]){
 
         //colocando a struct em ordem na outra struct de buffer 
         for (int i = start; i < posicao; i++) { //
-            sensor_alfabetico[j] = sensor[i];
+            sensor_alfabetico[j] = sensor[i];            
+            //printf("sensor alfabetico %d: %s %s %d\n", j, sensor_alfabetico[j].nome_sensor, sensor_alfabetico[j].medicao, sensor_alfabetico[j].timestamp_sensor);
             j++;
         }  
-        
+        //sairComQualquerTecla();
+        //limparTela();
         selection(sensor_alfabetico, j);
-        // atualizando a posição na struct inicial pra obter o proximo nome de sensor
-        start = posicao;
+        /*for (int i = 0; i< posicao-start;i++){
+            printf("sensor alfabetico ordenado %d: %s %s %d\n",i , sensor_alfabetico[i].nome_sensor, sensor_alfabetico[i].medicao, sensor_alfabetico[i].timestamp_sensor);
+        }
+        sairComQualquerTecla();*/
+        
+        
+        
 
         // criando um arquivo com a struct buffer
-        criarArquivo(k, sensor_alfabetico, j);
+        criarArquivo(sensor_alfabetico, posicao-start);
+
+        // atualizando a posição na struct inicial pra obter o proximo nome de sensor
+        start = posicao;
         sairComQualquerTecla();
         limparTela();
     }
+    
+    
     
     return 0;
 }
