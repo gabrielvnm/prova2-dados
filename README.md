@@ -54,3 +54,11 @@ Os códigos para cada tipo de dado são:
 O nome do arquivo gerado é sempre sensores_random.txt
 
 
+## Comentários gerais
+
+A função de gerar timestamp aleatório presente no AVA não deixa o programa compilar, então alguns parâmetros e argumentos foram alterados para que ela funcionasse.
+
+Após corrigir, foi verificado que o range de valores de timestamp aleatórios gerados era apenas de 96000 (um dia), mesmo se a data final informada fosse maior.
+
+Foi adicionada outra correção no cálculo da função para gerar o timestamp dentro do range especificado.
+
