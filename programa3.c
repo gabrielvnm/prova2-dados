@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 
-#define LINHAS_ARQUIVO 200
+#define LINHAS_ARQUIVO 2000
 #define NOME_SENSOR 16
 
 // tem que olhar ainda:
@@ -109,6 +109,7 @@ time_t converter_para_timestamp(int dia, int mes, int ano, int hora, int min, in
     time_t timestamp = mktime(&t);
     if (timestamp == -1) {
         printf("Data inválida. Tente novamente.\n");
+        return -1;
     } else {
         return timestamp;
     }
@@ -121,7 +122,6 @@ time_t gerar_timestamp_aleatorio(int dia, int mes, int ano, int hora, int min, i
     
     struct tm t;
     struct tm t2;
-
 
     t.tm_year = ano - 1900;
     t.tm_mon = mes - 1;
@@ -150,7 +150,7 @@ time_t gerar_timestamp_aleatorio(int dia, int mes, int ano, int hora, int min, i
         return -1;
     }
 
-    time_t timestamp_aleatorio = timestamp_inicial + rand() % (timestamp_final - timestamp_inicial + 1);
+    time_t timestamp_aleatorio = timestamp_inicial + (((double)rand() / RAND_MAX) * (timestamp_final - timestamp_inicial));//timestamp_inicial + rand() % (timestamp_final - timestamp_inicial + 1);
     
     return timestamp_aleatorio;
 } 
@@ -208,6 +208,8 @@ int main(int argc, char * argv[]){
         printf("Range de datas invalido! Tente novamente\n");
         return -1;
     }
+    printf("timestamp inicio %ld\n",inicio);
+    printf("timestamp fim %ld\n",fim);
     
     //validacao do tipo de dado do sensor
     int k = 0;
@@ -266,7 +268,7 @@ int main(int argc, char * argv[]){
                 fprintf(arquivo,"%d;",valorint);
                 break;
         }
-        fprintf(arquivo,"%d;\n",timestamp_usuario);
+        fprintf(arquivo,"%ld;\n",timestamp_usuario);
     }
     
     time_t timestamp_usuario = gerar_timestamp_aleatorio(dia, mes, ano, hora, min, seg, dia2, mes2, ano2, hora2, min2, seg2);
@@ -295,7 +297,7 @@ int main(int argc, char * argv[]){
             valorint = rand()%2;
             fprintf(arquivo,"%d;",valorint);
     }
-    fprintf(arquivo,"%d;",timestamp_usuario);
+    fprintf(arquivo,"%ld;",timestamp_usuario);
     printf("Sucesso! Arquivo criado: sensores_random.txt\n");
     fclose(arquivo);
 

@@ -5,7 +5,6 @@
 #include <locale.h>
 #include <conio.h>
 
-//#define MAX_NOME_ARQUIVO 30
 #define MAX_LINHAS 2001
 #define NOME_SENSOR 16
 #define MAX_LEITURA 10
@@ -14,7 +13,7 @@
 typedef struct{
     char nome_sensor[NOME_SENSOR];
     char medicao[MAX_LEITURA];
-    long long int timestamp_sensor;
+    long int timestamp_sensor;
 }Sensores ;
 
 void abrirArquivo();
@@ -52,7 +51,7 @@ void abrirArquivo(char nome_arquivo[], int numero_linhas, Sensores *sensor){
     int i = 0;
 
     // o programa ta lendo a medição do sensor como string pq não vai fazer nenhuma operação com o valor, entao nao faz tanta diferença o tipo de dado
-    while (fscanf(arquivo, "%16[^;];%10[^;];%lld;\n", sensortemp.nome_sensor, sensortemp.medicao, &sensortemp.timestamp_sensor)==3){
+    while (fscanf(arquivo, "%16[^;];%10[^;];%ld;\n", sensortemp.nome_sensor, sensortemp.medicao, &sensortemp.timestamp_sensor)==3){
         sensor[i] = sensortemp;
         i++;
     }
@@ -140,21 +139,21 @@ void selectionNome(Sensores *sensor, int size){
 void selection_(Sensores *sensor, int size){
     int i; 
     int j; 
-    int min_idx;
+    int max_idx;
 
     Sensores temp;
 
     for (i = 0; i < size - 1; i++) { 
-        min_idx = i;
+        max_idx = i;
         for (j = i+1; j < size; j++) {
-            if (sensor[j].timestamp_sensor < sensor[min_idx].timestamp_sensor) { 
-                min_idx = j;
+            if (sensor[j].timestamp_sensor > sensor[max_idx].timestamp_sensor) { //pra ordenar ascendente ou descendente é só trocar esse >
+                max_idx = j;
             }
         }
-        if (min_idx != i) {
+        if (max_idx != i) {
             temp = sensor[i];
-            sensor[i] = sensor[min_idx];
-            sensor[min_idx] = temp;
+            sensor[i] = sensor[max_idx];
+            sensor[max_idx] = temp;
         }
     }
 }
@@ -171,11 +170,11 @@ void gravarArquivo(FILE *arquivo, Sensores *sensor, int size){
     for (int i = 0; i < size-1; i++){
         fprintf(arquivo, "%s;",sensor[i].nome_sensor); 
         fprintf(arquivo, "%s;",sensor[i].medicao);
-        fprintf(arquivo, "%lld\n",sensor[i].timestamp_sensor);
+        fprintf(arquivo, "%ld\n",sensor[i].timestamp_sensor);
     }
     fprintf(arquivo, "%s;", sensor[size-1].nome_sensor);
     fprintf(arquivo, "%s;",sensor[size-1].medicao);
-    fprintf(arquivo, "%lld",sensor[size-1].timestamp_sensor);
+    fprintf(arquivo, "%ld",sensor[size-1].timestamp_sensor);
     fclose(arquivo);
 
 }
@@ -248,7 +247,7 @@ int main (int argc, char * argv[]){
     selection_nome(sensor, numero_linhas);
     int numero_sensores = obterNumeroSensores(sensor,numero_linhas);
 
-    // repetição pra copiar as coisas pra struct buffer e gravar num arquivo
+    // repetição pra copiar as coisas pra struct buffer e gravar num arquivo jasmyn dias
     for (int k = 0; k < numero_sensores; k++){ 
         // separando a struct por nome do sensor
         posicao = posicaoNome(sensor, numero_linhas, start);
