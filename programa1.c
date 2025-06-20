@@ -227,7 +227,6 @@ int main (int argc, char * argv[]){
         return -1;
     }
 
-    int key;
     int numero_linhas;
     int posicao;
     int start = 0;
@@ -247,7 +246,7 @@ int main (int argc, char * argv[]){
     selection_nome(sensor, numero_linhas);
     int numero_sensores = obterNumeroSensores(sensor,numero_linhas);
 
-    // repetição pra copiar as coisas pra struct buffer e gravar num arquivo jasmyn dias
+    // repetição pra copiar as coisas pra struct buffer e gravar num arquivo
     for (int k = 0; k < numero_sensores; k++){ 
         // separando a struct por nome do sensor
         posicao = posicaoNome(sensor, numero_linhas, start);
