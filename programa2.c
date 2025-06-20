@@ -7,7 +7,7 @@
 
 #define MAX_NOME_ARQUIVO 30
 #define MAX_LINHAS 2001
-#define NOME_SENSOR 16
+#define NOME_SENSOR 20
 
 // falta fazer
 // depois de trocar o programa1 pra ordenar decrescente, tem que alterar a função de binSearch
